@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Rolodex — People you've met</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#A8553D">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rolodex">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBF7F0;
+    --paper-deep:#F3EDE1;
+    --ink:#2B2620;
+    --ink-soft:#6B6357;
+    --terracotta:#A8553D;
+    --terracotta-soft:#C97A5E;
+    --sage:#6B7A5E;
+    --tan:#D4C5A8;
+    --tan-line:#E2D6BE;
+    --card-shadow: 0 1px 0 rgba(43,38,32,0.04), 0 6px 16px rgba(43,38,32,0.07);
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at top left, rgba(168,85,61,0.05), transparent 50%),
+      var(--paper);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    max-width:880px;
+    margin:0 auto;
+    padding:28px 20px 80px;
+  }
+
+  /* ---------- Header ---------- */
+  header.top{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:22px;
+    flex-wrap:wrap;
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  .brand h1{
+    font-family:'Lora', serif;
+    font-weight:700;
+    font-size:28px;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  .brand .tab-tooth{
+    width:10px;height:10px;border-radius:50%;
+    background:var(--terracotta);
+    display:inline-block;
+    transform:translateY(-2px);
+  }
+  .count-pill{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    background:var(--paper-deep);
+    border:1px solid var(--tan-line);
+    padding:3px 10px;
+    border-radius:100px;
+  }
+
+  .toolbar{
+    display:flex;
+    gap:10px;
+    margin-bottom:18px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  .search-wrap{
+    flex:1 1 220px;
+    position:relative;
+  }
+  .search-wrap input{
+    width:100%;
+    padding:10px 14px 10px 36px;
+    border-radius:10px;
+    border:1px solid var(--tan-line);
+    background:#fff;
+    font-family:'Inter';
+    font-size:14px;
+    color:var(--ink);
+    outline:none;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .search-wrap input:focus{
+    border-color:var(--terracotta-soft);
+    box-shadow:0 0 0 3px rgba(168,85,61,0.12);
+  }
+  .search-wrap svg{
+    position:absolute; left:12px; top:50%; transform:translateY(-50%);
+    width:14px;height:14px; stroke:var(--ink-soft);
+  }
+
+  .btn{
+    font-family:'Inter';
+    font-weight:600;
+    font-size:14px;
+    border:none;
+    border-radius:10px;
+    padding:10px 16px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    transition:transform .08s ease, box-shadow .15s ease, background .15s;
+    white-space:nowrap;
+  }
+  .btn:active{transform:translateY(1px) scale(0.98);}
+  .btn-primary{
+    background:var(--terracotta);
+    color:#fff;
+    box-shadow:0 2px 0 #8a4330, 0 4px 10px rgba(168,85,61,0.25);
+  }
+  .btn-primary:hover{background:var(--terracotta-soft);}
+  .btn-ghost{
+    background:transparent;
+    color:var(--ink-soft);
+    border:1px solid var(--tan-line);
+  }
+  .btn-ghost:hover{background:var(--paper-deep); color:var(--ink);}
+  .btn svg{width:14px;height:14px;}
+
+  .filter-row{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:22px;
+  }
+  .filter-chip{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11.5px;
+    padding:5px 12px;
+    border-radius:100px;
+    border:1px solid var(--tan-line);
+    background:#fff;
+    color:var(--ink-soft);
+    cursor:pointer;
+    user-select:none;
+    transition:all .15s;
+  }
+  .filter-chip.active{
+    background:var(--ink);
+    color:var(--paper);
+    border-color:var(--ink);
+  }
+  .filter-chip:hover:not(.active){border-color:var(--terracotta-soft); color:var(--terracotta);}
+
+  /* ---------- Grid of cards ---------- */
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
+    gap:14px;
+  }
+  .person-card{
+    background:#fff;
+    border:1px solid var(--tan-line);
+    border-radius:var(--radius);
+    padding:16px 16px 14px;
+    cursor:pointer;
+    box-shadow:var(--card-shadow);
+    transition:transform .12s ease, box-shadow .12s ease;
+    position:relative;
+    overflow:hidden;
+  }
+  .person-card::before{
+    content:'';
+    position:absolute;
+    top:0; left:0;
+    width:5px; height:100%;
+    background:var(--card-accent, var(--sage));
+  }
+  .person-card:hover{
+    transform:translateY(-2px);
+    box-shadow:0 2px 0 rgba(43,38,32,0.05), 0 10px 22px rgba(43,38,32,0.12);
+  }
+  .pc-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:8px;
+  }
+  .pc-name{
+    font-family:'Lora', serif;
+    font-weight:700;
+    font-size:18px;
+    line-height:1.2;
+    margin:0;
+    padding-left:6px;
+  }
+  .pc-tag{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:var(--card-accent, var(--sage));
+    background:color-mix(in srgb, var(--card-accent, var(--sage)) 12%, white);
+    padding:3px 7px;
+    border-radius:5px;
+    white-space:nowrap;
+    margin-left:8px;
+    flex-shrink:0;
+  }
+  .pc-work{
+    font-size:13px;
+    color:var(--ink-soft);
+    padding-left:6px;
+    margin:0 0 10px;
+    min-height:16px;
+  }
+  .pc-meta{
+    display:flex;
+    gap:10px;
+    padding-left:6px;
+    font-size:12px;
+    color:var(--ink-soft);
+    flex-wrap:wrap;
+  }
+  .pc-meta span{display:flex; align-items:center; gap:4px;}
+  .pc-meta svg{width:11px;height:11px; opacity:.7;}
+
+  .empty-state{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--ink-soft);
+  }
+  .empty-state .ico{font-size:34px; margin-bottom:10px;}
+  .empty-state h3{font-family:'Lora', serif; color:var(--ink); margin:0 0 6px;}
+  .empty-state p{margin:0 0 18px; font-size:14px;}
+
+  /* ---------- Modal / index card detail ---------- */
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(43,38,32,0.45);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    z-index:50;
+    backdrop-filter:blur(2px);
+  }
+  .overlay.show{display:flex;}
+  .index-card{
+    background:var(--paper);
+    width:100%;
+    max-width:560px;
+    max-height:88vh;
+    overflow-y:auto;
+    border-radius:10px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.3);
+    position:relative;
+    background-image:
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0px, transparent 35px,
+        rgba(168,85,61,0.08) 35px, rgba(168,85,61,0.08) 36px
+      );
+  }
+  .index-card::after{
+    content:'';
+    position:absolute;
+    top:0; left:54px;
+    width:1.5px; height:100%;
+    background:rgba(168,85,61,0.18);
+  }
+  .ic-inner{
+    position:relative;
+    padding:24px 28px 28px 70px;
+  }
+  .ic-close{
+    position:absolute;
+    top:14px; right:14px;
+    width:30px;height:30px;
+    border-radius:50%;
+    border:none;
+    background:rgba(43,38,32,0.06);
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--ink-soft);
+    font-size:16px;
+    z-index:2;
+  }
+  .ic-close:hover{background:rgba(43,38,32,0.12); color:var(--ink);}
+
+  .ic-name-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:4px;
+    padding-right:30px;
+  }
+  .ic-name-input{
+    font-family:'Lora', serif;
+    font-weight:700;
+    font-size:25px;
+    border:none;
+    background:transparent;
+    outline:none;
+    flex:1;
+    color:var(--ink);
+    padding:2px 0;
+    border-bottom:1px dashed transparent;
+  }
+  .ic-name-input:focus{border-bottom-color:var(--terracotta-soft);}
+  .ic-name-input::placeholder{color:#c9bda6;}
+
+  .tag-select-row{
+    display:flex;
+    gap:6px;
+    margin-bottom:18px;
+    flex-wrap:wrap;
+  }
+  .tag-opt{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    text-transform:uppercase;
+    padding:4px 9px;
+    border-radius:6px;
+    cursor:pointer;
+    border:1px solid var(--tan-line);
+    background:#fff;
+    color:var(--ink-soft);
+    transition:all .12s;
+  }
+  .tag-opt.sel{
+    color:#fff;
+    border-color:transparent;
+  }
+
+  .field-group{margin-bottom:16px;}
+  .field-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--terracotta);
+    margin-bottom:6px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .field-label svg{width:11px;height:11px;}
+  .field-row{display:flex; gap:10px;}
+  .field-row .field-group{flex:1;}
+  input.ic-field, textarea.ic-field{
+    width:100%;
+    font-family:'Inter';
+    font-size:14.5px;
+    border:none;
+    border-bottom:1px solid var(--tan-line);
+    background:transparent;
+    padding:4px 2px 6px;
+    outline:none;
+    color:var(--ink);
+    resize:none;
+    line-height:1.5;
+  }
+  input.ic-field:focus, textarea.ic-field:focus{border-bottom-color:var(--terracotta-soft);}
+  input.ic-field::placeholder, textarea.ic-field::placeholder{color:#c9bda6;}
+  textarea.ic-field{min-height:60px;}
+
+  .ic-footer{
+    margin-top:20px;
+    padding-top:14px;
+    border-top:1px solid var(--tan-line);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .saved-note{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--sage);
+    opacity:0;
+    transition:opacity .3s;
+  }
+  .saved-note.show{opacity:1;}
+  .delete-link{
+    font-size:12.5px;
+    color:#b5483a;
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-weight:600;
+    padding:4px;
+  }
+  .delete-link:hover{text-decoration:underline;}
+
+  /* ---------- Import/Export panel ---------- */
+  .io-menu{
+    position:absolute;
+    top:46px; right:0;
+    background:#fff;
+    border:1px solid var(--tan-line);
+    border-radius:10px;
+    box-shadow:0 8px 24px rgba(43,38,32,0.15);
+    padding:6px;
+    display:none;
+    z-index:10;
+    min-width:190px;
+  }
+  .io-menu.show{display:block;}
+  .io-menu button{
+    width:100%;
+    text-align:left;
+    background:none;
+    border:none;
+    padding:9px 10px;
+    font-family:'Inter';
+    font-size:13.5px;
+    color:var(--ink);
+    cursor:pointer;
+    border-radius:7px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .io-menu button:hover{background:var(--paper-deep);}
+  .io-menu svg{width:14px;height:14px; opacity:.7;}
+  .io-wrap{position:relative;}
+
+  .backup-status{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    color:var(--ink-soft);
+    margin-top:5px;
+    text-align:right;
+    white-space:nowrap;
+  }
+  .backup-status.stale{ color:var(--terracotta); }
+  .backup-status .dot{
+    display:inline-block;
+    width:5px;height:5px;
+    border-radius:50%;
+    background:var(--sage);
+    margin-right:5px;
+    transform:translateY(-1px);
+  }
+  .backup-status.stale .dot{ background:var(--terracotta); }
+
+  .nudge-banner{
+    display:none;
+    align-items:center;
+    gap:12px;
+    background:#fff;
+    border:1px solid var(--tan-line);
+    border-left:4px solid var(--terracotta);
+    border-radius:10px;
+    padding:12px 14px;
+    margin-bottom:18px;
+    box-shadow:var(--card-shadow);
+  }
+  .nudge-banner.show{display:flex;}
+  .nudge-icon{
+    font-size:18px;
+    flex-shrink:0;
+    width:30px; height:30px;
+    border-radius:50%;
+    background:var(--paper-deep);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .nudge-text{flex:1; min-width:0;}
+  .nudge-text strong{
+    display:block;
+    font-family:'Lora', serif;
+    font-size:14.5px;
+    font-weight:700;
+    color:var(--ink);
+    margin-bottom:2px;
+  }
+  .nudge-text span{
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .nudge-actions{display:flex; gap:6px; flex-shrink:0;}
+  .nudge-btn{
+    font-family:'Inter';
+    font-weight:600;
+    font-size:12.5px;
+    border:none;
+    border-radius:8px;
+    padding:7px 12px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .nudge-btn.primary{ background:var(--terracotta); color:#fff; }
+  .nudge-btn.primary:hover{ background:var(--terracotta-soft); }
+  .nudge-dismiss{
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    cursor:pointer;
+    font-size:16px;
+    padding:4px 6px;
+    line-height:1;
+    flex-shrink:0;
+  }
+  .nudge-dismiss:hover{ color:var(--ink); }
+
+  @media (max-width:480px){
+    .nudge-banner{ flex-wrap:wrap; }
+    .nudge-actions{ width:100%; justify-content:flex-end; }
+  }
+
+
+  .toast{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--ink);
+    color:var(--paper);
+    padding:11px 20px;
+    border-radius:10px;
+    font-size:13.5px;
+    font-family:'Inter';
+    opacity:0;
+    pointer-events:none;
+    transition:all .25s ease;
+    z-index:100;
+    box-shadow:0 8px 24px rgba(0,0,0,0.25);
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  @media (max-width:480px){
+    .ic-inner{padding:20px 18px 22px 44px;}
+    .index-card::after{left:30px;}
+    .brand h1{font-size:23px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div class="brand">
+      <span class="tab-tooth"></span>
+      <h1>Rolodex</h1>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button class="btn btn-primary" id="installBtn" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+        Install app
+      </button>
+      <span class="count-pill" id="countPill">0 people</span>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="searchInput" placeholder="Search name, work, notes…">
+    </div>
+    <button class="btn btn-primary" id="addBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Add person
+    </button>
+    <div class="io-wrap">
+      <button class="btn btn-ghost" id="ioBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Backup
+      </button>
+      <div class="io-menu" id="ioMenu">
+        <button id="shareBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Save to Drive…
+        </button>
+        <button id="exportBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export to file
+        </button>
+        <button id="importBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 9v6a2 2 0 01-2 2H5a2 2 0 01-2-2V9"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import from file
+        </button>
+      </div>
+      <input type="file" id="fileInput" accept=".json" style="display:none">
+      <div class="backup-status" id="backupStatus"><span class="dot"></span>never backed up</div>
+    </div>
+  </div>
+
+  <div class="nudge-banner" id="nudgeBanner">
+    <div class="nudge-icon">📦</div>
+    <div class="nudge-text">
+      <strong id="nudgeTitle">Time for a backup</strong>
+      <span id="nudgeSubtitle">You've added a few people since your last backup.</span>
+    </div>
+    <div class="nudge-actions">
+      <button class="nudge-btn primary" id="nudgeBackupBtn">Back up now</button>
+      <button class="nudge-dismiss" id="nudgeDismissBtn" aria-label="Dismiss">✕</button>
+    </div>
+  </div>
+
+  <div class="filter-row" id="filterRow"></div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="empty-state" id="emptyState" style="display:none;">
+    <div class="ico">📇</div>
+    <h3>No one here yet</h3>
+    <p>Add the first person you want to remember.</p>
+    <button class="btn btn-primary" id="emptyAddBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Add person
+    </button>
+  </div>
+
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="index-card">
+    <div class="ic-inner">
+      <button class="ic-close" id="closeBtn">✕</button>
+
+      <div class="ic-name-row">
+        <input class="ic-name-input" id="fName" placeholder="Their name">
+      </div>
+
+      <div class="tag-select-row" id="tagSelectRow"></div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <div class="field-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+            Phone
+          </div>
+          <input class="ic-field" id="fPhone" placeholder="+91 …" inputmode="tel">
+        </div>
+        <div class="field-group">
+          <div class="field-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Birthday
+          </div>
+          <input class="ic-field" id="fBirthday" type="date">
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+          Work
+        </div>
+        <input class="ic-field" id="fWork" placeholder="Role, company, what they do…">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9" y2="9"/><line x1="15" y1="9" x2="15" y2="9"/></svg>
+          Likes
+        </div>
+        <input class="ic-field" id="fLikes" placeholder="Coffee, hiking, sci-fi novels…">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="15" x2="16" y2="15"/><line x1="9" y1="9" x2="9" y2="9"/><line x1="15" y1="9" x2="15" y2="9"/></svg>
+          Dislikes
+        </div>
+        <input class="ic-field" id="fDislikes" placeholder="Crowds, cilantro, small talk…">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Notes — how you met, anything else
+        </div>
+        <textarea class="ic-field" id="fNotes" placeholder="Met at Priya's wedding, June 2026. Works with my cousin…"></textarea>
+      </div>
+
+      <div class="ic-footer">
+        <button class="delete-link" id="deleteBtn">Delete this person</button>
+        <span class="saved-note" id="savedNote">✓ saved</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'rolodex_people_v1';
+
+  const TAGS = [
+    {id:'friend', label:'Friend', color:'#A8553D'},
+    {id:'work', label:'Work', color:'#6B7A5E'},
+    {id:'family', label:'Family', color:'#7E6CA8'},
+    {id:'acquaintance', label:'Acquaintance', color:'#B08A3E'},
+    {id:'other', label:'Other', color:'#6B6357'},
+  ];
+  const tagMap = Object.fromEntries(TAGS.map(t=>[t.id,t]));
+
+  let people = load();
+  let activeFilter = 'all';
+  let currentId = null;
+  let saveTimer = null;
+
+  // ---------- persistence ----------
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    }catch(e){ console.error('Load failed', e); return []; }
+  }
+  function persist(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(people));
+  }
+  function uid(){ return 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  // ---------- backup tracking ----------
+  const BACKUP_META_KEY = 'rolodex_backup_meta_v1';
+  const NUDGE_PEOPLE_THRESHOLD = 5;   // nudge after this many new people since last backup
+  const NUDGE_DAYS_THRESHOLD = 14;    // ...or this many days, whichever comes first
+  const SNOOZE_PEOPLE_THRESHOLD = 3;  // after dismissing, wait for this many more people...
+  const SNOOZE_DAYS_THRESHOLD = 7;    // ...or this many days, before nudging again
+
+  function loadBackupMeta(){
+    try{
+      const raw = localStorage.getItem(BACKUP_META_KEY);
+      return raw ? JSON.parse(raw) : {
+        lastBackupAt: null,
+        peopleCountAtLastBackup: 0,
+        dismissedAt: null,
+        peopleCountAtDismiss: 0
+      };
+    }catch(e){
+      return { lastBackupAt:null, peopleCountAtLastBackup:0, dismissedAt:null, peopleCountAtDismiss:0 };
+    }
+  }
+  function persistBackupMeta(){
+    localStorage.setItem(BACKUP_META_KEY, JSON.stringify(backupMeta));
+  }
+  let backupMeta = loadBackupMeta();
+
+  function markBackedUp(){
+    backupMeta.lastBackupAt = Date.now();
+    backupMeta.peopleCountAtLastBackup = people.length;
+    backupMeta.dismissedAt = null;
+    backupMeta.peopleCountAtDismiss = 0;
+    persistBackupMeta();
+    renderBackupStatus();
+    updateNudge();
+  }
+
+  function daysSince(ts){
+    if(!ts) return Infinity;
+    return (Date.now() - ts) / (1000*60*60*24);
+  }
+
+  function formatRelativeTime(ts){
+    if(!ts) return 'never backed up';
+    const days = Math.floor(daysSince(ts));
+    if(days <= 0) return 'backed up today';
+    if(days === 1) return 'backed up 1 day ago';
+    if(days < 30) return `backed up ${days} days ago`;
+    const months = Math.floor(days/30);
+    return `backed up ${months} ${months===1?'month':'months'} ago`;
+  }
+
+  function renderBackupStatus(){
+    const el = document.getElementById('backupStatus');
+    const stale = daysSince(backupMeta.lastBackupAt) >= NUDGE_DAYS_THRESHOLD;
+    el.innerHTML = `<span class="dot"></span>${formatRelativeTime(backupMeta.lastBackupAt)}`;
+    el.classList.toggle('stale', stale || !backupMeta.lastBackupAt);
+  }
+
+  function updateNudge(){
+    const banner = document.getElementById('nudgeBanner');
+    const newPeopleSinceBackup = people.length - backupMeta.peopleCountAtLastBackup;
+    const daysSinceBackup = daysSince(backupMeta.lastBackupAt);
+
+    const dueForNudge = newPeopleSinceBackup >= NUDGE_PEOPLE_THRESHOLD || daysSinceBackup >= NUDGE_DAYS_THRESHOLD;
+
+    if(!dueForNudge || people.length === 0){
+      banner.classList.remove('show');
+      return;
+    }
+
+    // Respect a snooze: don't re-show until enough new people or enough days have passed since dismissal
+    if(backupMeta.dismissedAt){
+      const newSinceDismiss = people.length - backupMeta.peopleCountAtDismiss;
+      const daysSinceDismiss = daysSince(backupMeta.dismissedAt);
+      const snoozeExpired = newSinceDismiss >= SNOOZE_PEOPLE_THRESHOLD || daysSinceDismiss >= SNOOZE_DAYS_THRESHOLD;
+      if(!snoozeExpired){
+        banner.classList.remove('show');
+        return;
+      }
+    }
+
+    // Build the message
+    const title = document.getElementById('nudgeTitle');
+    const subtitle = document.getElementById('nudgeSubtitle');
+    if(!backupMeta.lastBackupAt){
+      title.textContent = "You haven't backed up yet";
+      subtitle.textContent = `${people.length} ${people.length===1?'person is':'people are'} only saved on this device right now.`;
+    } else if(newPeopleSinceBackup >= NUDGE_PEOPLE_THRESHOLD){
+      title.textContent = 'Time for a backup';
+      subtitle.textContent = `You've added ${newPeopleSinceBackup} people since your last backup.`;
+    } else {
+      title.textContent = 'Time for a backup';
+      const days = Math.floor(daysSinceBackup);
+      subtitle.textContent = `It's been ${days} days since your last backup.`;
+    }
+
+    banner.classList.add('show');
+  }
+
+  // ---------- rendering ----------
+  const grid = document.getElementById('grid');
+  const emptyState = document.getElementById('emptyState');
+  const countPill = document.getElementById('countPill');
+  const filterRow = document.getElementById('filterRow');
+  const searchInput = document.getElementById('searchInput');
+
+  function renderFilters(){
+    const chips = [{id:'all', label:'All'}, ...TAGS];
+    filterRow.innerHTML = chips.map(c=>{
+      const active = activeFilter===c.id ? 'active' : '';
+      return `<div class="filter-chip ${active}" data-filter="${c.id}">${c.label}</div>`;
+    }).join('');
+    filterRow.querySelectorAll('.filter-chip').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        activeFilter = el.dataset.filter;
+        renderFilters();
+        renderGrid();
+      });
+    });
+  }
+
+  function escapeHtml(s){
+    return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function formatBirthday(b){
+    if(!b) return null;
+    const d = new Date(b + 'T00:00:00');
+    if(isNaN(d)) return null;
+    return d.toLocaleDateString(undefined, {month:'short', day:'numeric'});
+  }
+
+  function renderGrid(){
+    const q = searchInput.value.trim().toLowerCase();
+    let list = people.filter(p=>{
+      if(activeFilter!=='all' && p.tag!==activeFilter) return false;
+      if(!q) return true;
+      const hay = [p.name,p.work,p.likes,p.dislikes,p.notes,p.phone].join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+    list.sort((a,b)=> (a.name||'').localeCompare(b.name||''));
+
+    countPill.textContent = people.length + (people.length===1 ? ' person' : ' people');
+    updateNudge();
+
+    if(list.length===0){
+      grid.style.display='none';
+      emptyState.style.display='block';
+      emptyState.querySelector('h3').textContent = people.length===0 ? "No one here yet" : "No matches";
+      emptyState.querySelector('p').textContent = people.length===0
+        ? "Add the first person you want to remember."
+        : "Try a different search or filter.";
+      emptyState.querySelector('#emptyAddBtn').style.display = people.length===0 ? 'inline-flex' : 'none';
+      return;
+    }
+    grid.style.display='grid';
+    emptyState.style.display='none';
+
+    grid.innerHTML = list.map(p=>{
+      const tag = tagMap[p.tag] || tagMap.other;
+      const bday = formatBirthday(p.birthday);
+      let metaBits = '';
+      if(p.phone){
+        metaBits += `<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>${escapeHtml(p.phone)}</span>`;
+      }
+      if(bday){
+        metaBits += `<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${bday}</span>`;
+      }
+      return `<div class="person-card" style="--card-accent:${tag.color}" data-id="${p.id}">
+        <div class="pc-top">
+          <h3 class="pc-name">${escapeHtml(p.name) || '(unnamed)'}</h3>
+          <span class="pc-tag">${tag.label}</span>
+        </div>
+        <p class="pc-work">${escapeHtml(p.work) || ''}</p>
+        <div class="pc-meta">${metaBits}</div>
+      </div>`;
+    }).join('');
+
+    grid.querySelectorAll('.person-card').forEach(el=>{
+      el.addEventListener('click', ()=> openCard(el.dataset.id));
+    });
+  }
+
+  // ---------- modal ----------
+  const overlay = document.getElementById('overlay');
+  const tagSelectRow = document.getElementById('tagSelectRow');
+  const fName = document.getElementById('fName');
+  const fPhone = document.getElementById('fPhone');
+  const fBirthday = document.getElementById('fBirthday');
+  const fWork = document.getElementById('fWork');
+  const fLikes = document.getElementById('fLikes');
+  const fDislikes = document.getElementById('fDislikes');
+  const fNotes = document.getElementById('fNotes');
+  const savedNote = document.getElementById('savedNote');
+  let selectedTag = 'other';
+
+  function renderTagSelect(){
+    tagSelectRow.innerHTML = TAGS.map(t=>{
+      const sel = selectedTag===t.id ? 'sel' : '';
+      const style = selectedTag===t.id ? `style="background:${t.color};border-color:${t.color}"` : '';
+      return `<div class="tag-opt ${sel}" data-tag="${t.id}" ${style}>${t.label}</div>`;
+    }).join('');
+    tagSelectRow.querySelectorAll('.tag-opt').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        selectedTag = el.dataset.tag;
+        renderTagSelect();
+        scheduleSave();
+      });
+    });
+  }
+
+  function openCard(id){
+    currentId = id;
+    const p = people.find(x=>x.id===id);
+    if(!p) return;
+    fName.value = p.name || '';
+    fPhone.value = p.phone || '';
+    fBirthday.value = p.birthday || '';
+    fWork.value = p.work || '';
+    fLikes.value = p.likes || '';
+    fDislikes.value = p.dislikes || '';
+    fNotes.value = p.notes || '';
+    selectedTag = p.tag || 'other';
+    renderTagSelect();
+    savedNote.classList.remove('show');
+    overlay.classList.add('show');
+    setTimeout(()=>fName.focus(), 50);
+  }
+
+  function closeCard(){
+    overlay.classList.remove('show');
+    currentId = null;
+    renderGrid();
+  }
+
+  function addPerson(){
+    const p = {
+      id: uid(),
+      name:'', phone:'', birthday:'', work:'', likes:'', dislikes:'', notes:'',
+      tag:'other',
+      createdAt: Date.now()
+    };
+    people.unshift(p);
+    persist();
+    openCard(p.id);
+    renderGrid();
+  }
+
+  function scheduleSave(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(doSave, 250);
+  }
+
+  function doSave(){
+    if(!currentId) return;
+    const p = people.find(x=>x.id===currentId);
+    if(!p) return;
+    p.name = fName.value.trim();
+    p.phone = fPhone.value.trim();
+    p.birthday = fBirthday.value;
+    p.work = fWork.value.trim();
+    p.likes = fLikes.value.trim();
+    p.dislikes = fDislikes.value.trim();
+    p.notes = fNotes.value.trim();
+    p.tag = selectedTag;
+    persist();
+    savedNote.classList.add('show');
+    setTimeout(()=>savedNote.classList.remove('show'), 1200);
+  }
+
+  [fName,fPhone,fBirthday,fWork,fLikes,fDislikes,fNotes].forEach(el=>{
+    el.addEventListener('input', scheduleSave);
+  });
+
+  document.getElementById('deleteBtn').addEventListener('click', ()=>{
+    if(!currentId) return;
+    const p = people.find(x=>x.id===currentId);
+    const ok = confirm(`Delete ${p && p.name ? p.name : 'this person'}? This can't be undone (unless you have a backup).`);
+    if(!ok) return;
+    people = people.filter(x=>x.id!==currentId);
+    persist();
+    closeCard();
+    showToast('Person deleted');
+  });
+
+  document.getElementById('closeBtn').addEventListener('click', closeCard);
+  overlay.addEventListener('click', (e)=>{ if(e.target===overlay) closeCard(); });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key==='Escape' && overlay.classList.contains('show')) closeCard();
+  });
+
+  document.getElementById('addBtn').addEventListener('click', addPerson);
+  document.getElementById('emptyAddBtn').addEventListener('click', addPerson);
+  searchInput.addEventListener('input', renderGrid);
+
+  // ---------- import / export ----------
+  const ioBtn = document.getElementById('ioBtn');
+  const ioMenu = document.getElementById('ioMenu');
+  ioBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    ioMenu.classList.toggle('show');
+  });
+  document.addEventListener('click', ()=> ioMenu.classList.remove('show'));
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 2200);
+  }
+
+  function buildBackupFile(){
+    const data = {
+      app: 'rolodex',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      people: people
+    };
+    const stamp = new Date().toISOString().slice(0,10);
+    const filename = `rolodex-backup-${stamp}.json`;
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    return {blob, filename};
+  }
+
+  document.getElementById('exportBtn').addEventListener('click', ()=>{
+    const {blob, filename} = buildBackupFile();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`Exported ${people.length} ${people.length===1?'person':'people'} to file`);
+    markBackedUp();
+  });
+
+  document.getElementById('shareBtn').addEventListener('click', async ()=>{
+    const {blob, filename} = buildBackupFile();
+    const file = new File([blob], filename, {type:'application/json'});
+    const canShareFiles = navigator.canShare && navigator.canShare({files:[file]});
+
+    if(navigator.share && canShareFiles){
+      try{
+        await navigator.share({
+          files:[file],
+          title:'Rolodex backup',
+          text:`Rolodex backup — ${people.length} ${people.length===1?'person':'people'}`
+        });
+        showToast('Backup shared');
+        markBackedUp();
+      }catch(err){
+        if(err && err.name !== 'AbortError'){
+          console.error(err);
+          showToast('Could not share — try Export to file instead');
+        }
+      }
+    } else {
+      // No file-sharing support here (e.g. desktop browser) — fall back to download.
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Downloaded — upload this file to Drive manually');
+      markBackedUp();
+    }
+  });
+
+  document.getElementById('importBtn').addEventListener('click', ()=>{
+    document.getElementById('fileInput').click();
+  });
+
+  document.getElementById('fileInput').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev)=>{
+      try{
+        const parsed = JSON.parse(ev.target.result);
+        const incoming = Array.isArray(parsed) ? parsed : parsed.people;
+        if(!Array.isArray(incoming)) throw new Error('Unrecognized file format');
+
+        const mode = confirm(
+          `Found ${incoming.length} ${incoming.length===1?'person':'people'} in this file.\n\nClick OK to MERGE with your current ${people.length} people (skipping duplicates by name+phone).\nClick Cancel to REPLACE your current list entirely.`
+        );
+
+        if(mode){
+          // merge
+          let added = 0;
+          incoming.forEach(np=>{
+            const dupe = people.some(ep =>
+              ep.name && np.name && ep.name.toLowerCase()===np.name.toLowerCase() &&
+              (ep.phone||'')===(np.phone||'')
+            );
+            if(!dupe){
+              people.push({
+                id: np.id || uid(),
+                name: np.name||'', phone: np.phone||'', birthday: np.birthday||'',
+                work: np.work||'', likes: np.likes||'', dislikes: np.dislikes||'',
+                notes: np.notes||'', tag: np.tag||'other',
+                createdAt: np.createdAt || Date.now()
+              });
+              added++;
+            }
+          });
+          persist();
+          showToast(`Merged — added ${added} new ${added===1?'person':'people'}`);
+        } else {
+          people = incoming.map(np=>({
+            id: np.id || uid(),
+            name: np.name||'', phone: np.phone||'', birthday: np.birthday||'',
+            work: np.work||'', likes: np.likes||'', dislikes: np.dislikes||'',
+            notes: np.notes||'', tag: np.tag||'other',
+            createdAt: np.createdAt || Date.now()
+          }));
+          persist();
+          showToast(`Replaced list — now ${people.length} people`);
+        }
+        renderGrid();
+      }catch(err){
+        alert('Could not read this file. Make sure it\'s a Rolodex export (.json).');
+        console.error(err);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  // ---------- install prompt ----------
+  const installBtn = document.getElementById('installBtn');
+  let deferredInstallEvent = null;
+
+  window.addEventListener('beforeinstallprompt', (e)=>{
+    e.preventDefault();
+    deferredInstallEvent = e;
+    installBtn.style.display = 'inline-flex';
+  });
+
+  installBtn.addEventListener('click', async ()=>{
+    if(!deferredInstallEvent) return;
+    deferredInstallEvent.prompt();
+    const {outcome} = await deferredInstallEvent.userChoice;
+    if(outcome === 'accepted'){
+      showToast('Installed — find it on your home screen');
+    }
+    deferredInstallEvent = null;
+    installBtn.style.display = 'none';
+  });
+
+  window.addEventListener('appinstalled', ()=>{
+    installBtn.style.display = 'none';
+    showToast('Rolodex installed');
+  });
+
+  // ---------- service worker (offline support) ----------
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('service-worker.js').catch(err=>{
+        console.error('Service worker registration failed', err);
+      });
+    });
+  }
+
+  // ---------- backup nudge banner controls ----------
+  document.getElementById('nudgeBackupBtn').addEventListener('click', ()=>{
+    document.getElementById('shareBtn').click();
+  });
+
+  document.getElementById('nudgeDismissBtn').addEventListener('click', ()=>{
+    backupMeta.dismissedAt = Date.now();
+    backupMeta.peopleCountAtDismiss = people.length;
+    persistBackupMeta();
+    document.getElementById('nudgeBanner').classList.remove('show');
+  });
+
+  // ---------- init ----------
+  renderFilters();
+  renderGrid();
+  renderBackupStatus();
+})();
+</script>
+</body>
+</html>
