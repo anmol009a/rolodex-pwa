@@ -8,6 +8,35 @@ to back it up.
 
 ---
 
+## ⚠️ Project status: Dropped
+
+After building and UAT-testing this app, the project has been discontinued. The core reason is that it does not offer meaningful value over what already ships on every Android phone.
+
+**Google Contacts and Samsung Contacts already provide:**
+- Automatic, continuous sync across all devices
+- Birthday reminders via Google Calendar
+- Photos, multiple phone numbers, emails, and addresses per contact
+- Integration with the phone dialer, WhatsApp, and Gmail
+- Built-in duplicate detection
+- Zero setup — already installed
+
+**What Rolodex does differently:**
+- Dedicated fields for Likes, Dislikes, and "how you met" — but these
+  can simply be put in the Notes field of any contacts app.
+- Tags (Friend, Work, Family…) — Google Contacts has Labels that do the same.
+- Data never leaves the device — the only genuine differentiator, and
+  only relevant if you specifically distrust Google with your contacts.
+
+**What would have made it genuinely useful** is leaning into the
+personal-CRM angle that Google Contacts does *not* cover: interaction
+history ("last spoke 3 months ago"), reach-out reminders, pre-meeting
+context prompts, and life-event tracking. Without those features this
+is just a contacts app with fewer capabilities and a worse backup story.
+
+The code and UAT results are preserved here for reference.
+
+---
+
 ## How to install on your Android phone
 
 1. Copy this whole folder to anywhere on your phone, **or** host it (see
